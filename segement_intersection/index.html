@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Segment Intersection</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="myCanvas"></canvas>
+    <script>
+        myCanvas.width = window.innerWidth;
+        myCanvas.height = window.innerHeight;
+
+        const A = { x: 200, y: 150 };
+        const B = { x: 150, y: 250 };
+        const C = { x: 50, y: 100 };
+        const D = { x: 250, y: 200 };
+
+        const context = myCanvas.getContext('2d');
+
+        let angle = 0;
+        const mouse = { x: 0, y: 0 };
+        document.onmousemove = (event) => {
+            mouse.x = event.x;
+            mouse.y = event.y;
+        }
+
+        animate();
+
+        function animate() {
+            const radius = 50;
+            A.x = mouse.x + Math.cos(angle) * radius;
+            A.y = mouse.y - Math.sin(angle) * radius;
+            B.x = mouse.x - Math.cos(angle) * radius;
+            B.y = mouse.y + Math.sin(angle) * radius;
+            angle += 0.02;
+
+            context.clearRect(0, 0, myCanvas.width, myCanvas.height);
+
+            context.beginPath();
+            context.moveTo(A.x, A.y);
+            context.lineTo(B.x, B.y);
+            context.moveTo(C.x, C.y);
+            context.lineTo(D.x, D.y);
+            context.stroke();
+
+            drawDot(A, "A");
+            drawDot(B, "B");
+            drawDot(C, "C");
+            drawDot(D, "D");
+
+            const I = getIntersection(A, B, C, D);
+            drawDot(I, "I");
+
+            const scaledBottom = I.bottom / 100;
+            // we can see that when lines are parallel, rectange width is 0, so that makes bottom 0
+
+            context.beginPath();
+            context.rect(myCanvas.width / 2, 0, scaledBottom, 10);
+            context.fill();
+
+            requestAnimationFrame(animate);
+        }
+
+        function getIntersection(A, B, C, D) {
+            /*
+            
+            Ix = Ax+(Bx-Ax)t = Cx+(Dx-Cx)u
+            Iy = Ay+(By-Ay)t = Cy+(Dy-Cy)u
+
+            Ax+(Bx-Ax)t = Cx+(Dx-Cx)u | -Cx
+            (Ax-Cx)+(Bx-Ax)t = (Dx-Cx)u | if we divide, then Dx-Cx might be zero so lets keep it like it is
+
+            Ay+(By-Ay)t = Cy+(Dy-Cy)u | -Cy
+            (Ay-Cy)+(By-Ay)t = (Dy-Cy)u | *(Dx-Cx)
+
+            (Dx-Cx)(Ay-Cy)+(Dx-Cx)(By-Ay)t = (Dy-Cy)(Dx-Cx)u 
+            (Dx-Cx)(Ay-Cy)+(Dx-Cx)(By-Ay)t 
+                = (Dy-Cy)(Ax-Cx)+(Dy-Cy)(Bx-Ax)t | -(Dy-Cy)(Ax-Cx)
+                                                 | -(Dx-Cx)(By-Ay)t  
+                                                 
+            (Dx-Cx)(Ay-Cy)-(Dy-Cy)(Ax-Cx) = 
+                (Dy-Cy)(Bx-Ax)t-(Dx-Cx)(By-Ay)t
+
+            t = (Dx-Cx)(Ay-Cy)-(Dy-Cy)(Ax-Cx) / (Dy-Cy)(Bx-Ax)-(Dx-Cx)(By-Ay)
+
+            top = (Dx-Cx)(Ay-Cy)-(Dy-Cy)(Ax-Cx)
+            bottom = (Dy-Cy)(Bx-Ax)-(Dx-Cx)(By-Ay)
+
+            t = top/bottom; bottom must not be zero
+
+            */
+
+            const top = (D.x - C.x) * (A.y - C.y) - (D.y - C.y) * (A.x - C.x);
+            const bottom = (D.y - C.y) * (B.x - A.x) - (D.x - C.x) * (B.y - A.y);
+            const t = top / bottom;
+            return {
+                x: lerp(A.x, B.x, t),
+                y: lerp(A.y, B.y, t),
+                bottom
+            }
+        }
+
+
+
+        function lerp(A, B, t) {
+            return A + (B - A) * t;
+        }
+
+        function drawDot(point, label, isRed) {
+            context.beginPath();
+            context.fillStyle = isRed ? 'red' : 'white';
+
+            // radius of 10 px, starting at 0 deg, to 2pi radians
+            context.arc(point.x, point.y, 10, 0, Math.PI * 2);
+
+            context.fill();
+            context.stroke();
+            context.fillStyle = 'black';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.font = 'bold 10px Arial';
+            context.fillText(label, point.x, point.y);
+        }
+
+
+
+
+    </script>
+</body>
+
+</html>
